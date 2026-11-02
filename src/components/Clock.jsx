@@ -53,7 +53,7 @@ function shouldShowHour(hourIdx, side, flipType, hideHourIndicators) {
   return true;
 }
 
-export default function Clock({ random, side, flipType, hideHourIndicators, onFlip }) {
+export default function Clock({ random, side, flipType, hideHourIndicators, rotation = 0, onFlip }) {
   const isFirstRenderRef = useRef(true);
   const prevRandomRef = useRef(random);
   const [whiteDials, setWhiteDials] = useState(() => random.slice(0, 9).map(v => v * 30));
@@ -100,7 +100,8 @@ export default function Clock({ random, side, flipType, hideHourIndicators, onFl
   const dialColor = side === 'white' ? 'black' : 'white';
 
   return (
-    <div className="clock-body" onClick={onFlip} style={{ background: side === 'black' ? 'white' : '#2a2a2a' }}>
+    <div className="clock-body" onClick={onFlip} style={{ background: side === 'black' ? 'white' : '#2a2a2a', transform: `rotate(${rotation}deg)` }}>
+      <span className="rotation-marker" />
       <div id="clock">
         {POSITIONS.map((pos, i) => (
           <div key={`circle-${pos}`} className={`circle ${pos}`} style={{ backgroundColor: side === 'black' ? 'white' : '#1a1a1a', outline: side === 'black' ? '1px solid #bbb' : 'none' }}>

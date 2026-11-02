@@ -5,7 +5,7 @@ import Stats from './components/Stats';
 import Toast from './components/Toast';
 import {
   checkPinOrder, generateScrambleText, scrambleconvert,
-  computeMemoForPairs, swapSides, LETTER_MAPS, DEFAULT_PIN_ORDERS,
+  computeMemoForPairs, swapSides, rotateClockState, LETTER_MAPS, DEFAULT_PIN_ORDERS,
 } from './logic/clockLogic';
 import { celebrate } from './logic/celebration';
 import {
@@ -109,6 +109,8 @@ export default function App() {
   const [flipType, setFlipType] = useState(() => getFlipTypeForSimul(initSimultype));
 
   const [side, setSide] = useState('white');
+  const [committedMoves, setCommittedMoves] = useState([]);
+  const [viewTurns, setViewTurns] = useState(0);
   const [random, setRandom] = useState(ZERO_RANDOM);
   const [scrambletext, setScrambletext] = useState('');
   const previousScrambleRef = useRef('');
@@ -215,10 +217,32 @@ export default function App() {
     setSide(prev => prev === 'white' ? 'black' : 'white');
   }
 
+  function applyOrientation(state, moves) {
+    return moves.reduce((next, move) => move === 'z' ? rotateClockState(next) :
+      move === "z'" ? rotateClockState(next, -1) : swapSides(next, move), state);
+  }
+
+  function rotate(move) {
+    const hasMemo = stateRef.current.memo.length > 0;
+    const appliedMove = stateRef.current.side === 'black'
+      ? move === 'z' ? "z'" : move === "z'" ? 'z' : move
+      : move;
+    if (move === 'x2' || move === 'y2') flip();
+    if (hasMemo) {
+      if (move === 'z') setViewTurns(turns => turns + 1);
+      else if (move === "z'") setViewTurns(turns => turns - 1);
+      return;
+    }
+    setCommittedMoves(moves => [...moves, appliedMove]);
+    if (move === 'z') setViewTurns(turns => turns + 1);
+    else if (move === "z'") setViewTurns(turns => turns - 1);
+  }
+
   const stateRef = useRef({});
   stateRef.current = {
     executionMode, memo, random, order, simultype, letterMap, checkedPairs,
     umoveLeft, dmoveLeft, scrambletext, timerEnabled, flipType, side, customChars, swapM3M4,
+    committedMoves,
   };
 
   function doScramble(rnd, sctext, execMode, ord, sim, lm, pairs, uL, dL, timerOn) {
@@ -226,6 +250,8 @@ export default function App() {
     setCheckResult({ text: execMode ? 'Execution Trainer Mode' : 'Enter Memo', color: 'white' });
     setMemoColorData(null);
     setMemo('');
+    setCommittedMoves([]);
+    setViewTurns(0);
     setScrambletext(sctext);
     setRandom(rnd);
     setSide('white');
@@ -257,6 +283,8 @@ export default function App() {
     const rnd = scrambleconvert(entered);
     const s = stateRef.current;
     setRandom(rnd);
+    setCommittedMoves([]);
+    setViewTurns(0);
     setScrambletext(entered);
     setSide('white');
     if (!s.executionMode) {
@@ -272,7 +300,7 @@ export default function App() {
     const s = stateRef.current;
     if (!s.memo || hasCheckedRef.current) return;
     hasCheckedRef.current = true;
-    const realMemo = getMemo(s.random, s.order, s.simultype, s.letterMap, s.checkedPairs, s.umoveLeft, s.dmoveLeft, s.swapM3M4);
+    const realMemo = getMemo(applyOrientation(s.random, s.committedMoves), s.order, s.simultype, s.letterMap, s.checkedPairs, s.umoveLeft, s.dmoveLeft, s.swapM3M4);
     const isCorrect = s.memo === realMemo;
 
     if (isCorrect) {
@@ -409,6 +437,8 @@ export default function App() {
     setRandom(rnd);
     setScrambletext(sctext);
     setMemo('');
+    setCommittedMoves([]);
+    setViewTurns(0);
     setSide('white');
     if (checked) {
       const m = getMemo(rnd, order, simultype, letterMap, checkedPairs, umoveLeft, dmoveLeft);
@@ -428,9 +458,14 @@ export default function App() {
 
   useEffect(() => {
     function onKeyDown(e) {
-      if (document.activeElement && document.activeElement.tagName === 'INPUT' && document.activeElement.type === 'text') return;
+      if (document.activeElement?.matches('input, select, textarea')) return;
       const s = stateRef.current;
-      if (e.key === ' ') {
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {
+        e.preventDefault();
+        if (e.repeat) return;
+        const moves = { ArrowUp: 'x2', ArrowDown: 'y2', ArrowLeft: 'z', ArrowRight: "z'" };
+        rotate(moves[e.code]);
+      } else if (e.code === 'Space') {
         e.preventDefault();
         flip();
       } else if (e.key === 's' || e.key === 'S') {
@@ -556,8 +591,12 @@ export default function App() {
             side={side}
             flipType={flipType}
             hideHourIndicators={hideHourIndicatorsState}
+            rotation={viewTurns * 90}
             onFlip={flip}
           />
+          <div className={`rotation-hint ${memo ? 'view' : 'commit'}`}>
+            {memo ? 'VIEW' : 'COMMIT'} · ↑ x2 ↓ y2 ← z → z′
+          </div>
         </div>
 
         {/* ── Right: Controls ── */}

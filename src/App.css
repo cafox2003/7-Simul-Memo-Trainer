@@ -114,6 +114,10 @@ body {
   text-align: center;
 }
 
+.rotation-hint { font-size: 0.72rem; color: #ef4444; text-align: center; }
+.rotation-hint.view { color: #aaa; }
+.rotation-marker { position: absolute; top: 2px; left: 50%; width: 9px; height: 9px; margin-left: -4px; border-radius: 50%; background: #ef4444; z-index: 2; pointer-events: none; }
+
 /* ── Clock outer circular bezel ──────────────────────────────── */
 .clock-body {
   border-radius: 50%;
