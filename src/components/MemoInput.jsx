@@ -12,6 +12,8 @@ export default function MemoInput({
   executionMode,
   timer,
   timerEnabled,
+  onRotate,
+  flipType,
 }) {
   // Rotate labels: shift first element to last (so "L" appears after K)
   const rotatedLabels = [...letterMap.slice(1), letterMap[0]];
@@ -26,6 +28,16 @@ export default function MemoInput({
     </button>
   ));
 
+  const rotationButtons = (
+    <div className="rotation-controls" aria-label="Clock rotation controls">
+      <button type="button" className="rotate-up" aria-label="Rotate x2" onClick={() => onRotate('x2')}>↑ <small>x2</small></button>
+      <button type="button" className="rotate-left" aria-label="Rotate z" onClick={() => onRotate('z')}>← <small>z</small></button>
+      <button type="button" className="rotate-flip" onClick={() => onRotate(flipType)}>Flip <small>{flipType}</small></button>
+      <button type="button" className="rotate-right" aria-label="Rotate z prime" onClick={() => onRotate("z'")}>→ <small>z′</small></button>
+      <button type="button" className="rotate-down" aria-label="Rotate y2" onClick={() => onRotate('y2')}>↓ <small>y2</small></button>
+    </div>
+  );
+
   if (executionMode) {
     return (
       <div
@@ -33,6 +45,7 @@ export default function MemoInput({
         className={columns}
         style={{ display: showButtons ? 'grid' : 'none', maxWidth, gap }}
       >
+        {rotationButtons}
         <button onClick={onScramble}>🔀</button>
         {!showButtons && timerEnabled && (
           <p id="timer" style={{ display: 'block', gridColumn: '2' }}>
@@ -50,6 +63,7 @@ export default function MemoInput({
       className={columns}
       style={{ display: showButtons ? 'grid' : 'none', maxWidth, gap }}
     >
+      {rotationButtons}
       {letterButtons}
       <button onClick={onCheck}>✓</button>
       <button onClick={onScramble}>🔀</button>

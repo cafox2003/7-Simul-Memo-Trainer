@@ -671,6 +671,8 @@ export default function App() {
             executionMode={executionMode}
             timer={timerDisplay}
             timerEnabled={timerEnabled}
+            onRotate={rotation => rotate({ rotation })}
+            flipType={flipType}
           />
 
           {/* Scramble bar */}
