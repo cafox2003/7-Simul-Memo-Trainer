@@ -179,7 +179,7 @@ export function computeMemoForPairs(random, order, simultype, letterMap, checked
       c += random[z] * Number(matrices[order[2]][order[1].indexOf(i) * 2][z]);
       c2 += random[z] * Number(matrices[order[2]][order[1].indexOf(i) * 2 + 1][z]);
     }
-    const reverseLetters = ['ur', 'dr', 'UL', 'DL', 'L', '\\'].includes(i) ||
+    const reverseLetters = ['ur', 'dr', 'UL', 'DL', 'L', 'R', '\\'].includes(i) ||
       (i === 'U' && umoveLeft) ||
       (i === 'D' && dmoveLeft);
     if (reverseLetters) {
