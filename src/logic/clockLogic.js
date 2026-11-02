@@ -152,17 +152,17 @@ export function swapSides(state, flipType = 'x2') {
   return r;
 }
 
-// Rotate the clock state clockwise as viewed from the front. The five back
+// Apply z turns as viewed from the front. The five back
 // dials are stored in top/left/center/right/bottom order.
 export function rotateClockState(state, turns = 1) {
   let result = [...state];
   for (let turn = 0; turn < ((turns % 4) + 4) % 4; turn++) {
     const next = [...result];
     [0, 1, 2, 3, 4, 5, 6, 7, 8].forEach((to, i) => {
-      next[to] = result[[6, 3, 0, 7, 4, 1, 8, 5, 2][i]];
+      next[to] = result[[2, 5, 8, 1, 4, 7, 0, 3, 6][i]];
     });
     [9, 10, 11, 12, 13].forEach((to, i) => {
-      next[to] = result[[12, 9, 11, 13, 10][i]];
+      next[to] = result[[10, 13, 11, 9, 12][i]];
     });
     result = next;
   }

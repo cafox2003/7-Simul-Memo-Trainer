@@ -78,6 +78,9 @@ function HelpPopup() {
           Scramble the clock and enter your memo starting from the face shown, flipping the puzzle as needed. Open <strong style={{ display: 'inline' }}>Settings</strong> to customise your memo input characters and more. Your solve history is in the <strong style={{ display: 'inline' }}>Stats Settings</strong>, where you can switch between multiple sessions to track different practice sets.
           <b>Controls</b>
           <span><strong style={{ display: 'inline' }}>Space / Click Clock:</strong> Flip</span><br />
+          <span><strong style={{ display: 'inline' }}>↑ / ↓:</strong> x2 / y2</span><br />
+          <span><strong style={{ display: 'inline' }}>← / →:</strong> z / z′</span><br />
+          <span>Arrow rotations commit before memo entry and view after typing starts.</span><br />
           <span><strong style={{ display: 'inline' }}>Enter / ✓:</strong> Check Memo</span><br />
           <span><strong style={{ display: 'inline' }}>S / 🔀:</strong> Scramble</span><br />
           <span><strong style={{ display: 'inline' }}>Backspace / ⌫:</strong> Delete</span><br />
@@ -110,6 +113,7 @@ export default function App() {
 
   const [side, setSide] = useState('white');
   const [committedMoves, setCommittedMoves] = useState([]);
+  const [committedTurns, setCommittedTurns] = useState(0);
   const [viewTurns, setViewTurns] = useState(0);
   const [random, setRandom] = useState(ZERO_RANDOM);
   const [scrambletext, setScrambletext] = useState('');
@@ -217,6 +221,11 @@ export default function App() {
     setSide(prev => prev === 'white' ? 'black' : 'white');
   }
 
+  function viewFlip() {
+    flip();
+    if (flipType === 'x2') setViewTurns(turns => turns + 2);
+  }
+
   function applyOrientation(state, moves) {
     return moves.reduce((next, move) => move === 'z' ? rotateClockState(next) :
       move === "z'" ? rotateClockState(next, -1) : swapSides(next, move), state);
@@ -231,11 +240,12 @@ export default function App() {
     if (hasMemo) {
       if (move === 'z') setViewTurns(turns => turns + 1);
       else if (move === "z'") setViewTurns(turns => turns - 1);
+      else if (move === 'x2') setViewTurns(turns => turns + 2);
       return;
     }
     setCommittedMoves(moves => [...moves, appliedMove]);
-    if (move === 'z') setViewTurns(turns => turns + 1);
-    else if (move === "z'") setViewTurns(turns => turns - 1);
+    if (move === 'z') setCommittedTurns(turns => turns + 1);
+    else if (move === "z'") setCommittedTurns(turns => turns - 1);
   }
 
   const stateRef = useRef({});
@@ -251,6 +261,7 @@ export default function App() {
     setMemoColorData(null);
     setMemo('');
     setCommittedMoves([]);
+    setCommittedTurns(0);
     setViewTurns(0);
     setScrambletext(sctext);
     setRandom(rnd);
@@ -284,6 +295,7 @@ export default function App() {
     const s = stateRef.current;
     setRandom(rnd);
     setCommittedMoves([]);
+    setCommittedTurns(0);
     setViewTurns(0);
     setScrambletext(entered);
     setSide('white');
@@ -438,6 +450,7 @@ export default function App() {
     setScrambletext(sctext);
     setMemo('');
     setCommittedMoves([]);
+    setCommittedTurns(0);
     setViewTurns(0);
     setSide('white');
     if (checked) {
@@ -467,7 +480,7 @@ export default function App() {
         rotate(moves[e.code]);
       } else if (e.code === 'Space') {
         e.preventDefault();
-        flip();
+        viewFlip();
       } else if (e.key === 's' || e.key === 'S') {
         scramble();
       } else if (e.key === 'Backspace' && !s.executionMode) {
@@ -552,7 +565,7 @@ export default function App() {
   }
 
   function handleFlipTypeChange(newFlipType) {
-    if (stateRef.current.side === 'black') flip();
+    if (stateRef.current.side === 'black') viewFlip();
     setFlipType(newFlipType);
     toast(`Flip type changed to ${newFlipType}`);
   }
@@ -591,12 +604,10 @@ export default function App() {
             side={side}
             flipType={flipType}
             hideHourIndicators={hideHourIndicatorsState}
-            rotation={viewTurns * 90}
-            onFlip={flip}
+            rotation={(committedTurns + viewTurns) * -90}
+            markerRotation={viewTurns * -90}
+            onFlip={viewFlip}
           />
-          <div className={`rotation-hint ${memo ? 'view' : 'commit'}`}>
-            {memo ? 'VIEW' : 'COMMIT'} · ↑ x2 ↓ y2 ← z → z′
-          </div>
         </div>
 
         {/* ── Right: Controls ── */}

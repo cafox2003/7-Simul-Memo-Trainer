@@ -53,7 +53,7 @@ function shouldShowHour(hourIdx, side, flipType, hideHourIndicators) {
   return true;
 }
 
-export default function Clock({ random, side, flipType, hideHourIndicators, rotation = 0, onFlip }) {
+export default function Clock({ random, side, flipType, hideHourIndicators, rotation = 0, markerRotation = 0, onFlip }) {
   const isFirstRenderRef = useRef(true);
   const prevRandomRef = useRef(random);
   const [whiteDials, setWhiteDials] = useState(() => random.slice(0, 9).map(v => v * 30));
@@ -100,9 +100,10 @@ export default function Clock({ random, side, flipType, hideHourIndicators, rota
   const dialColor = side === 'white' ? 'black' : 'white';
 
   return (
-    <div className="clock-body" onClick={onFlip} style={{ background: side === 'black' ? 'white' : '#2a2a2a', transform: `rotate(${rotation}deg)` }}>
-      <span className="rotation-marker" />
-      <div id="clock">
+    <div className="clock-stage">
+      <span className="rotation-orbit" style={{ transform: `rotate(${markerRotation}deg)` }}><span className="rotation-marker" /></span>
+      <div className="clock-body" onClick={onFlip} style={{ background: side === 'black' ? 'white' : '#2a2a2a', transform: `rotate(${rotation}deg)` }}>
+        <div id="clock">
         {POSITIONS.map((pos, i) => (
           <div key={`circle-${pos}`} className={`circle ${pos}`} style={{ backgroundColor: side === 'black' ? 'white' : '#1a1a1a', outline: side === 'black' ? '1px solid #bbb' : 'none' }}>
             <div className="circle-face" style={{ backgroundColor: circleColor }} />
@@ -145,6 +146,7 @@ export default function Clock({ random, side, flipType, hideHourIndicators, rota
         <div className="pin-dot pin-ur" style={{ backgroundColor: side === 'black' ? 'black' : 'white' }} />
         <div className="pin-dot pin-dl" style={{ backgroundColor: side === 'black' ? 'black' : 'white' }} />
         <div className="pin-dot pin-dr" style={{ backgroundColor: side === 'black' ? 'black' : 'white' }} />
+        </div>
       </div>
     </div>
   );
