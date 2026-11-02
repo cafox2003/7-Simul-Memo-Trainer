@@ -152,6 +152,23 @@ export function swapSides(state, flipType = 'x2') {
   return r;
 }
 
+// Rotate the clock state clockwise as viewed from the front. The five back
+// dials are stored in top/left/center/right/bottom order.
+export function rotateClockState(state, turns = 1) {
+  let result = [...state];
+  for (let turn = 0; turn < ((turns % 4) + 4) % 4; turn++) {
+    const next = [...result];
+    [0, 1, 2, 3, 4, 5, 6, 7, 8].forEach((to, i) => {
+      next[to] = result[[6, 3, 0, 7, 4, 1, 8, 5, 2][i]];
+    });
+    [9, 10, 11, 12, 13].forEach((to, i) => {
+      next[to] = result[[12, 9, 11, 13, 10][i]];
+    });
+    result = next;
+  }
+  return result;
+}
+
 export function computeMemoForPairs(random, order, simultype, letterMap, checkedPairs, umoveLeft, dmoveLeft) {
   let realMemo = '';
   for (const i of order[0]) {
