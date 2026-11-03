@@ -1,12 +1,16 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import Clock from './components/Clock';
 import MemoInput from './components/MemoInput';
 import Stats from './components/Stats';
 import Toast from './components/Toast';
 import {
   checkPinOrder, generateScrambleText, scrambleconvert,
-  computeMemoForPairs, swapSides, rotateClockState, LETTER_MAPS, DEFAULT_PIN_ORDERS,
+  computeMemoForPairs, swapSides, LETTER_MAPS, DEFAULT_PIN_ORDERS,
 } from './logic/clockLogic';
+import {
+  IDENTITY_ORIENTATION, applyOrientation, composeOrientations,
+  deriveCommittedOrientation, orientationGenerator,
+} from './logic/orientation';
 import { celebrate } from './logic/celebration';
 import {
   loadStats, addStatRow, deleteStatAt, clearStats, computeInstantStats,
@@ -114,7 +118,8 @@ export default function App() {
 
   const [side, setSide] = useState('white');
   const [markerFace, setMarkerFace] = useState('white');
-  const [committedMoves, setCommittedMoves] = useState([]);
+  const [totalOrientation, setTotalOrientation] = useState(IDENTITY_ORIENTATION);
+  const [viewOrientation, setViewOrientation] = useState(IDENTITY_ORIENTATION);
   const [committedTurns, setCommittedTurns] = useState(0);
   const [viewTurns, setViewTurns] = useState(0);
   const [markerTurns, setMarkerTurns] = useState(0);
@@ -205,12 +210,14 @@ export default function App() {
   }
 
   const effectiveChars = customChars.length >= 12 ? customChars : 'ABCDEFGHIJKL';
-  const chars = effectiveChars.padEnd(12, ' ').slice(0, 12).split('');
-  const letterMap = [chars[11], ...chars.slice(0, 11)];
+  const letterMap = useMemo(() => {
+    const chars = effectiveChars.padEnd(12, ' ').slice(0, 12).split('');
+    return [chars[11], ...chars.slice(0, 11)];
+  }, [effectiveChars]);
 
-  function getMemo(rnd, ord, sim, lm, pairs, uL, dL, swap = swapM3M4) {
+  function getMemo(rnd, ord, sim, lm, pairs, uL, dL, swap = swapM3M4, isOriented = false) {
     if (!ord || pairs.length === 0) return '';
-    const state = sim === 'BPaul' ? rnd : swapSides(rnd);
+    const state = sim === 'BPaul' || isOriented ? rnd : swapSides(rnd);
     let memo = computeMemoForPairs(state, ord, sim, lm, pairs, uL, dL);
     if (swap && sim !== 'BPaul' && memo.length >= 5) {
       const chars = memo.replace(/ /g, '');
@@ -225,15 +232,21 @@ export default function App() {
     return Math.abs(zTurns % 2) ? (type === 'x2' ? 'y2' : 'x2') : type;
   }
 
-  function applyOrientation(state, moves) {
-    return moves.reduce((next, move) => move === 'z' ? rotateClockState(next) :
-      move === "z'" ? rotateClockState(next, -1) : swapSides(next, move), state);
-  }
-
-  function rotate({ rotation, commit = !stateRef.current.memo.length }) {
+  function rotate({ rotation, commit = !stateRef.current.memo.length || hasCheckedRef.current }) {
     const orientedMove = rotation === 'x2' || rotation === 'y2'
       ? getOrientedFlipType(rotation)
       : rotation;
+    const actionTransform = orientationGenerator(rotation);
+    const nextTotalOrientation = composeOrientations(actionTransform, stateRef.current.totalOrientation);
+    const nextViewOrientation = commit
+      ? stateRef.current.viewOrientation
+      : composeOrientations(actionTransform, stateRef.current.viewOrientation);
+    const nextCommittedOrientation = deriveCommittedOrientation(nextTotalOrientation, nextViewOrientation);
+    stateRef.current.totalOrientation = nextTotalOrientation;
+    stateRef.current.viewOrientation = nextViewOrientation;
+    stateRef.current.committedOrientation = nextCommittedOrientation;
+    setTotalOrientation(nextTotalOrientation);
+    if (!commit) setViewOrientation(nextViewOrientation);
 
     if (rotation === 'x2' || rotation === 'y2') {
       const side = stateRef.current.side === 'white' ? 'black' : 'white';
@@ -243,8 +256,6 @@ export default function App() {
     }
 
     if (commit) {
-      stateRef.current.committedMoves = [...stateRef.current.committedMoves, orientedMove];
-      setCommittedMoves(stateRef.current.committedMoves);
       if (rotation === 'x2' || rotation === 'y2') {
         stateRef.current.markerFace = stateRef.current.markerFace === 'white' ? 'black' : 'white';
         setMarkerFace(stateRef.current.markerFace);
@@ -260,13 +271,34 @@ export default function App() {
       stateRef.current.markerTurns += 2;
       setMarkerTurns(stateRef.current.markerTurns);
     }
+
+    if (stateRef.current.executionMode) {
+      const memoState = stateRef.current.simultype === 'BPaul'
+        ? stateRef.current.random
+        : swapSides(stateRef.current.random);
+      const orientedRandom = applyOrientation(memoState, stateRef.current.committedOrientation);
+      const currentMemo = getMemo(
+        orientedRandom,
+        stateRef.current.order,
+        stateRef.current.simultype,
+        stateRef.current.letterMap,
+        stateRef.current.checkedPairs,
+        stateRef.current.umoveLeft,
+        stateRef.current.dmoveLeft,
+        stateRef.current.swapM3M4,
+        true,
+      );
+      setMemoDisplay('Memo: ' + currentMemo);
+    }
   }
 
   const stateRef = useRef({});
   stateRef.current = {
     executionMode, memo, random, order, simultype, letterMap, checkedPairs,
     umoveLeft, dmoveLeft, scrambletext, timerEnabled, flipType, side, customChars, swapM3M4,
-    committedMoves, committedTurns, viewTurns, markerTurns, markerFace,
+    totalOrientation, viewOrientation,
+    committedOrientation: deriveCommittedOrientation(totalOrientation, viewOrientation),
+    committedTurns, viewTurns, markerTurns, markerFace,
   };
 
   function doScramble(rnd, sctext, execMode, ord, sim, lm, pairs, uL, dL, timerOn) {
@@ -274,7 +306,11 @@ export default function App() {
     setCheckResult({ text: execMode ? 'Execution Trainer Mode' : 'Enter Memo', color: 'white' });
     setMemoColorData(null);
     setMemo('');
-    setCommittedMoves([]);
+    stateRef.current.totalOrientation = IDENTITY_ORIENTATION;
+    stateRef.current.viewOrientation = IDENTITY_ORIENTATION;
+    stateRef.current.committedOrientation = IDENTITY_ORIENTATION;
+    setTotalOrientation(IDENTITY_ORIENTATION);
+    setViewOrientation(IDENTITY_ORIENTATION);
     setCommittedTurns(0);
     setViewTurns(0);
     setMarkerTurns(0);
@@ -310,7 +346,11 @@ export default function App() {
     const rnd = scrambleconvert(entered);
     const s = stateRef.current;
     setRandom(rnd);
-    setCommittedMoves([]);
+    stateRef.current.totalOrientation = IDENTITY_ORIENTATION;
+    stateRef.current.viewOrientation = IDENTITY_ORIENTATION;
+    stateRef.current.committedOrientation = IDENTITY_ORIENTATION;
+    setTotalOrientation(IDENTITY_ORIENTATION);
+    setViewOrientation(IDENTITY_ORIENTATION);
     setCommittedTurns(0);
     setViewTurns(0);
     setMarkerTurns(0);
@@ -330,7 +370,8 @@ export default function App() {
     const s = stateRef.current;
     if (!s.memo || hasCheckedRef.current) return;
     hasCheckedRef.current = true;
-    const realMemo = getMemo(applyOrientation(s.random, s.committedMoves), s.order, s.simultype, s.letterMap, s.checkedPairs, s.umoveLeft, s.dmoveLeft, s.swapM3M4);
+    const memoState = s.simultype === 'BPaul' ? s.random : swapSides(s.random);
+    const realMemo = getMemo(applyOrientation(memoState, s.committedOrientation), s.order, s.simultype, s.letterMap, s.checkedPairs, s.umoveLeft, s.dmoveLeft, s.swapM3M4, true);
     const isCorrect = s.memo === realMemo;
 
     if (isCorrect) {
@@ -469,7 +510,11 @@ export default function App() {
     setRandom(rnd);
     setScrambletext(sctext);
     setMemo('');
-    setCommittedMoves([]);
+    stateRef.current.totalOrientation = IDENTITY_ORIENTATION;
+    stateRef.current.viewOrientation = IDENTITY_ORIENTATION;
+    stateRef.current.committedOrientation = IDENTITY_ORIENTATION;
+    setTotalOrientation(IDENTITY_ORIENTATION);
+    setViewOrientation(IDENTITY_ORIENTATION);
     setCommittedTurns(0);
     setViewTurns(0);
     setMarkerTurns(0);
@@ -502,7 +547,7 @@ export default function App() {
         rotate({ rotation: moves[e.code] });
       } else if (e.code === 'Space') {
         e.preventDefault();
-        rotate({ rotation: stateRef.current.flipType });
+        rotate({ rotation: stateRef.current.flipType, commit: false });
       } else if (e.key === 's' || e.key === 'S') {
         scramble();
       } else if (e.key === 'Backspace' && !s.executionMode) {
@@ -630,7 +675,7 @@ export default function App() {
             rotation={(committedTurns + viewTurns) * -90}
             markerRotation={(viewTurns + markerTurns) * -90}
             markerVisible={side === markerFace}
-            onFlip={() => rotate({ rotation: stateRef.current.flipType })}
+            onFlip={() => rotate({ rotation: stateRef.current.flipType, commit: false })}
           />
         </div>
 

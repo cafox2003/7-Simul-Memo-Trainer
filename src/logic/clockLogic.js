@@ -1,5 +1,8 @@
-import matricesData from './matrices.json';
-import pinOrdersData from './pinOrders.json';
+import matricesData from './matrices.json' with { type: 'json' };
+import pinOrdersData from './pinOrders.json' with { type: 'json' };
+import { rotateClockState, swapSides } from './orientation.js';
+
+export { rotateClockState, swapSides };
 
 export const matrices = matricesData;
 export const pinOrders = pinOrdersData;
@@ -128,45 +131,6 @@ export function convertToBPaulIfNeeded(realMemo, simultype) {
     return realMemo;
   }
   return realMemo;
-}
-
-export function swapSides(state, flipType = 'x2') {
-  const s = [...state];
-  const r = [...state];
-  const inv = v => (12 - v) % 12;
-  if (flipType === 'y2') {
-    // Y2: left-right corner swap with inversion
-    r[0] = inv(s[2]); r[2] = inv(s[0]);
-    r[6] = inv(s[8]); r[8] = inv(s[6]);
-    // Centers: [1,3,4,5,7] ↔ pins [13,12,11,10,9]
-    r[1] = s[13]; r[3] = s[12]; r[4] = s[11]; r[5] = s[10]; r[7] = s[9];
-    r[9] = s[7];  r[10] = s[5]; r[11] = s[4]; r[12] = s[3]; r[13] = s[1];
-  } else {
-    // X2: top-bottom corner swap with inversion
-    r[0] = inv(s[6]); r[2] = inv(s[8]);
-    r[6] = inv(s[0]); r[8] = inv(s[2]);
-    // Centers: [1,3,4,5,7] ↔ pins [9,10,11,12,13]
-    r[1] = s[9];  r[3] = s[10]; r[4] = s[11]; r[5] = s[12]; r[7] = s[13];
-    r[9] = s[1];  r[10] = s[3]; r[11] = s[4]; r[12] = s[5]; r[13] = s[7];
-  }
-  return r;
-}
-
-// Apply z turns as viewed from the front. The five back
-// dials are stored in top/left/center/right/bottom order.
-export function rotateClockState(state, turns = 1) {
-  let result = [...state];
-  for (let turn = 0; turn < ((turns % 4) + 4) % 4; turn++) {
-    const next = [...result];
-    [0, 1, 2, 3, 4, 5, 6, 7, 8].forEach((to, i) => {
-      next[to] = result[[2, 5, 8, 1, 4, 7, 0, 3, 6][i]];
-    });
-    [9, 10, 11, 12, 13].forEach((to, i) => {
-      next[to] = result[[10, 13, 11, 9, 12][i]];
-    });
-    result = next;
-  }
-  return result;
 }
 
 export function computeMemoForPairs(random, order, simultype, letterMap, checkedPairs, umoveLeft, dmoveLeft) {
