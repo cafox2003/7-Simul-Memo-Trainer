@@ -16,8 +16,8 @@ export function swapSides(state, flipType = 'x2') {
   return r;
 }
 
-// Apply z turns as viewed from the front. The five back dials are stored
-// in top/left/center/right/bottom order.
+// Apply counter-clockwise quarter turns as viewed from the front (so z is
+// turns = -1). The five back dials are stored in top/left/center/right/bottom order.
 export function rotateClockState(state, turns = 1) {
   let result = [...state];
   for (let turn = 0; turn < ((turns % 4) + 4) % 4; turn++) {
@@ -55,8 +55,9 @@ export const IDENTITY_ORIENTATION = Object.freeze({
 const ORIENTATION_GENERATORS = {
   x2: transformFromFunction(state => swapSides(state, 'x2')),
   y2: transformFromFunction(state => swapSides(state, 'y2')),
-  z: transformFromFunction(state => rotateClockState(state)),
-  "z'": transformFromFunction(state => rotateClockState(state, -1)),
+  // Screen-frame moves; z is clockwise as seen from the front (WCA).
+  z: transformFromFunction(state => rotateClockState(state, -1)),
+  "z'": transformFromFunction(state => rotateClockState(state)),
 };
 
 export function orientationGenerator(move) {
@@ -96,4 +97,17 @@ export function applyOrientation(state, orientation) {
   return orientation.sources.map((source, i) =>
     ((orientation.signs[i] * state[source]) % 12 + 12) % 12,
   );
+}
+
+const sameOrientation = (a, b) =>
+  a.sources.every((source, i) => source === b.sources[i] && a.signs[i] === b.signs[i]);
+
+// Clockwise quarter turns t with orientation = z^t ∘ base, or undefined if none.
+export function zTurnsOf(orientation, base = IDENTITY_ORIENTATION) {
+  let candidate = base;
+  for (let t = 0; t < 4; t++) {
+    if (sameOrientation(candidate, orientation)) return t;
+    candidate = composeOrientations(ORIENTATION_GENERATORS.z, candidate);
+  }
+  return undefined;
 }
