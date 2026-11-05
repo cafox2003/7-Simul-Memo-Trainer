@@ -32,10 +32,13 @@ Open the local URL printed by Vite (by default, port **5174**; set `PORT` to ove
 | Action | Control |
 | --- | --- |
 | Flip the clock | **Space** or click the clock |
+| Rotate the clock | **Arrow keys** or the rotation buttons (← z′, → z, ↑ x2, ↓ y2) |
 | Generate a scramble | **S** or the scramble button |
 | Check the memo | **Enter** or the check button |
 | Delete an input character | **Backspace** or the delete button |
 | Copy the scramble | Click the scramble text or copy button |
+
+Space only turns the view. Before entering memo, arrows set the starting orientation. After you have begun to enter memo, they only turn the view.
 
 Use **Settings** to adjust memo input and clock options. **Stats Settings** contains practice mode, session selection, CSV export, and history management.
 

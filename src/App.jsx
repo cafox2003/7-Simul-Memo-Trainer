@@ -81,10 +81,10 @@ function HelpPopup() {
           <b>How to use</b>
           Scramble the clock and enter your memo starting from the face shown, flipping the puzzle as needed. Open <strong style={{ display: 'inline' }}>Settings</strong> to customise your memo input characters and more. Your solve history is in the <strong style={{ display: 'inline' }}>Stats Settings</strong>, where you can switch between multiple sessions to track different practice sets.
           <b>Controls</b>
-          <span><strong style={{ display: 'inline' }}>Space / Click Clock:</strong> Commit before memo; view afterward</span><br />
+          <span><strong style={{ display: 'inline' }}>Space / Click Clock:</strong> Flip to look at the other side</span><br />
           <span><strong style={{ display: 'inline' }}>↑ / ↓:</strong> x2 / y2</span><br />
-          <span><strong style={{ display: 'inline' }}>← / →:</strong> z / z′</span><br />
-          <span>Arrow rotations commit before memo entry and view after typing starts.</span><br />
+          <span><strong style={{ display: 'inline' }}>← / →:</strong> z′ / z</span><br />
+          <span>Before entering memo, arrows set the starting orientation. After you have begun to enter memo, they only turn the view.</span><br />
           <span><strong style={{ display: 'inline' }}>Enter / ✓:</strong> Check Memo</span><br />
           <span><strong style={{ display: 'inline' }}>S / 🔀:</strong> Scramble</span><br />
           <span><strong style={{ display: 'inline' }}>Backspace / ⌫:</strong> Delete</span><br />
@@ -656,7 +656,6 @@ export default function App() {
             timer={timerDisplay}
             timerEnabled={timerEnabled}
             onRotate={rotation => rotate({ rotation })}
-            flipType={flipType}
           />
 
           {/* Scramble bar */}

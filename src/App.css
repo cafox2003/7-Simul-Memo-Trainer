@@ -117,14 +117,11 @@ body {
 .clock-stage { position: relative; width: calc(var(--cell-size) * (485 / 110)); height: calc(var(--cell-size) * (485 / 110)); }
 .rotation-orbit { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
 .rotation-marker { position: absolute; top: 2px; left: 50%; width: 9px; height: 9px; margin-left: -4px; border-radius: 50%; background: #ef4444; }
-.rotation-controls { grid-column: 1 / -1; justify-self: center; display: grid; grid-template-columns: repeat(3, 3.5rem); grid-template-rows: repeat(3, 2.75rem); gap: 0.25rem; }
-.rotation-controls button { border: 1px solid var(--border); border-radius: 6px; background: var(--surface); color: white; touch-action: manipulation; }
+/* Buttons join the parent grid as letter-sized cells, starting a new row. */
+.rotation-controls { display: contents; }
+.rotation-controls > :first-child { grid-column: 1; }
+.rotation-controls button { touch-action: manipulation; }
 .rotation-controls small { color: #bbb; }
-.rotate-up { grid-area: 1 / 2; }
-.rotate-left { grid-area: 2 / 1; }
-.rotate-flip { grid-area: 2 / 2; }
-.rotate-right { grid-area: 2 / 3; }
-.rotate-down { grid-area: 3 / 2; }
 /* ── Clock outer circular bezel ──────────────────────────────── */
 .clock-body {
   border-radius: 50%;
