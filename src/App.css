@@ -218,16 +218,46 @@ body {
   background: #3a3a3a;
 }
 
+.accordion-btn.open {
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+
+/* Collapsed by default; animates open by growing the grid row. */
 .accordion-body {
   background: var(--surface2);
-  border: 1px solid var(--border);
-  border-top: none;
+  border: 0 solid var(--border);
   border-radius: 0 0 var(--radius) var(--radius);
-  padding: 0.75rem 1rem;
+  display: grid;
+  grid-template-rows: 0fr;
+  visibility: hidden;
+  transition: grid-template-rows 0.2s ease, visibility 0.2s;
+  font-size: 0.85rem;
+}
+
+.accordion-body.open {
+  grid-template-rows: 1fr;
+  border-width: 0 1px 1px;
+  visibility: visible;
+}
+
+.accordion-body-inner {
+  min-height: 0;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  font-size: 0.85rem;
+  padding: 0 1rem;
+  transition: padding 0.2s ease;
+}
+
+/* Unclip once fully open so the ? tooltips aren't cut off. */
+.accordion-body.open .accordion-body-inner {
+  padding: 0.75rem 1rem;
+  animation: accordion-unclip 0s 0.2s forwards;
+}
+
+@keyframes accordion-unclip {
+  to { overflow: visible; }
 }
 
 .accordion-body label {
